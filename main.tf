@@ -8,6 +8,6 @@ resource "aws_s3_bucket" "my_bucket" {
 }
 
 locals {
-  HARDCODED_GITHUB_WEBHOOK_SECRET2dsfs = "ghp_1234567890abcdef1234567890abcdef1234"
-  HARDCODED_SNYK_TOKEN1dsdf2            = "snyk_1234567890abcdef1234567890abcdef1234"
+  HARDCODED_GITHUB_WEBHOOK_SECRET2ddfs = "ghp_1234567890abcdef1234567890abcdef1234"
+  HARDCODED_SNYK_TOKEN1dsddf2            = "snyk_1234567890abcdef1234567890abcdef1234"
 }
