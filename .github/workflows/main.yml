@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   scan:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.repository }}@${{ github.ref }}
         uses: actions/checkout@v4
