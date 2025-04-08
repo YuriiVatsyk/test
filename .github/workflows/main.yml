@@ -21,13 +21,17 @@ permissions:
 
 jobs:
   scan:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ github.repository }}@${{ github.ref }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Detecting secrets
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Detecting secrets
+      #   uses: gitleaks/gitleaks-action@v2
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --results=verified,unknown

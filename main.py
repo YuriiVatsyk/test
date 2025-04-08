@@ -14,8 +14,8 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 # Hardcoded secrets for testing purposes (Vulnerability)
-HARDCODED_GITHUB_WEBHOOK_SECRET311 = "ghp_1234567890abcdef1234567890abcdef1234"
-HARDCODED_SNYK_TOKEN311 = "snyk_1234567890abcdef1234567890abcdef1234"
+HARDCODED_GITHUB_WEBHOOK_SECRET31d1 = "ghp_1234567890abcdef1234567890abcdef1234"
+HARDCODED_SNYK_TOKEN31d1 = "snyk_1234567890abcdef1234567890abcdef1234"
 
 def get_ssm_parameter(ssm_parameter: str) -> str:
     """
