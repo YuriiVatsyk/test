@@ -1,0 +1,33 @@
+name: "Build: Terraform Docker Artifact"
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - 'release/**'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - converted_to_draft
+    branches:
+      - 'develop'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu
+    steps:
+      - name: Checkout ${{ github.repository }}@${{ github.ref }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detecting secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

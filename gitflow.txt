@@ -1,0 +1,69 @@
+gfr-start() {
+    if [[ "$#" -ne "1" ]]; then
+        echo "Usage: gfr-start <version>"
+        return
+    fi
+
+    # Start the release
+    export GIT_MERGE_AUTOEDIT=no
+    git flow init -d || { echo "Failed to initialize git flow"; return; }
+    git checkout master || { echo "Failed to checkout master"; return; }
+    git pull || { echo "Failed to pull latest changes on master"; return; }
+    git checkout develop || { echo "Failed to checkout develop"; return; }
+    git pull || { echo "Failed to pull latest changes on develop"; return; }
+    git flow release start $1 || { echo "Failed to start release $1"; return; }
+    git push --set-upstream origin "release/$1" || { echo "Failed to push release branch"; return; }
+    # Create a pull request using GitHub CLI
+    gh pr create --base master --head "release/$1" --title "Release $1" --body "Release $1" || { echo "Failed to create pull request"; return; }
+    echo "Please request the review and merge the pull request on GitHub. After merging, use 'gfr-finish <version>' to finish the release flow."
+    unset GIT_MERGE_AUTOEDIT
+}
+
+gfr-finish() {
+    if [[ "$#" -ne "1" ]]; then
+        echo "Usage: gfr-finish <version>"
+        return
+    fi
+
+    # Check if PR is opened for the correct release
+    pr_release=$(gh pr view "release/$1" --json title --jq '.title' 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to retrieve pull request information. Please ensure the GitHub CLI is installed and authenticated."
+        return
+    fi
+
+    if [[ "$pr_release" != "Release $1" ]]; then
+        echo "The pull request is not found for release with version: $1. Please check the release version."
+        return
+    fi
+
+    # Check if the PR is merged
+    pr_status=$(gh pr view "release/$1" --json state --jq '.state' 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to retrieve pull request status. Please ensure the GitHub CLI is installed and authenticated."
+        return
+    fi
+
+    if [[ "$pr_status" != "MERGED" ]]; then
+        echo "The pull request for release version: $1 has not been merged yet. Please merge it before finishing the release."
+        return
+    fi
+
+    # Finish the release after the PR is merged
+    echo "Finishing the release process for version: $1..."
+    git checkout master || { echo "Failed to checkout master"; return; }
+    git pull || { echo "Failed to pull latest changes on master"; return; }
+    git flow release finish $1 || { echo "Failed to finish release $1"; return; }
+    git push || { echo "Failed to push changes to master"; return; }
+    git push --tags || { echo "Failed to push tags"; return; }
+    git checkout develop || { echo "Failed to checkout develop"; return; }
+    git merge master || { echo "Failed to merge master into develop"; return; }
+    git push || { echo "Failed to push changes to develop"; return; }
+    echo "Release process for version: $1 completed successfully."
+}
+
+gfr-fixed-finish() {
+    git checkout master || { echo "Failed to checkout master"; return; }
+    git rebase || { echo "Failed to rebase on master"; return; }
+    git push || { echo "Failed to push changes to develop"; return; }
+}

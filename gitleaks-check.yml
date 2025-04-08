@@ -1,0 +1,80 @@
+name: Detect secrets
+##
+## Detecting secrets like passwords, API keys, and tokens in git repos.
+##
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The GitHub runner name to run the jobs.
+        type: string
+        default: ubuntu-latest
+        required: false
+      submodules:
+        description: >
+          Whether to checkout submodules: `true` to checkout submodules or `recursive` to
+          recursively checkout submodules.
+        type: string
+        default: 'false'
+        required: false
+    secrets:
+      ENV_VARS:
+        description: A list of sensitive environment variables. Expected format ENV=value
+        required: false
+      GH_SSH_KEY:
+        description: >
+          A private SSH key with access to the private repositories (dependencies).
+          Only required when submodules is true and the submodules point to private repositories.
+        required: false
+
+jobs:
+  scan:
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      ENV_VARS: ${{ secrets.ENV_VARS }}
+    steps:
+      # Workaround for secret context limitation for input args in reusable workflows
+      # https://github.com/orgs/community/discussions/26671#discussioncomment-6776498
+      - name: Decode sensitive environment variables
+        if: ${{ env.ENV_VARS != '' }}
+        run: |
+          for i in $ENV_VARS; do
+            i="$(echo ${i%%=*})=$(echo ${i#*=} | base64 -di | base64 -di)"
+            echo ::add-mask::${i#*=}
+            printf '%s\n' "$i" >> $GITHUB_ENV
+          done
+      - name: Checkout ${{ github.repository }}@${{ github.ref }}
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.GH_SSH_KEY }}
+          submodules: ${{ inputs.submodules }}
+          # We need to fetch all history for all branches and tags to derive tag properly
+          fetch-depth: 0
+      - name: Add private SSH key to clone private org repos
+        if: ${{ env.GH_SSH_KEY != '' }}
+        shell: bash
+        env:
+          GH_SSH_KEY: ${{ secrets.GH_SSH_KEY }}
+        run: |
+          export SSH_AUTH_SOCK="/tmp/ssh_agent.$$.sock"
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          eval "$(ssh-agent -s -a "$SSH_AUTH_SOCK")"
+          ssh-add - <<<"${{ secrets.GH_SSH_KEY }}"
+          echo "Added successfully SSH private key to clone private repositories from github.com/redmatter"
+      - name: Detecting secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   - name: Publish Scan Image Results
+    #     if: ${{ inputs.scan-image && always() }}
+    #     shell: bash
+    #     run: |
+    #       echo "### Trivy Scan Image Results :bookmark:" >> "$GITHUB_STEP_SUMMARY"
+    #       while IFS= read -r line; do
+    #           if [[ $line == "┌"* ]]; then echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+    #           echo "$line" >> "$GITHUB_STEP_SUMMARY"
+    #           if [[ $line == *"┘" ]]; then echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+    #       done < "trivy-results.table"

@@ -1,0 +1,54 @@
+repos:
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect secrets in your data.
+        entry: bash -c 'trufflehog git file://. --since-commit HEAD --results=verified,unknown --fail'
+        # For running trufflehog in docker, use the following entry instead:
+        # entry: bash -c 'docker run --rm -v "$(pwd):/workdir" -i --rm trufflesecurity/trufflehog:latest git file:///workdir --since-commit HEAD --results=verified,unknown --fail'
+        language: system
+        stages: ["pre-commit", "pre-push"]
+
+# repos:
+#   - repo: https://github.com/gitleaks/gitleaks
+#     rev: v8.24.2
+#     hooks:
+#       - id: gitleaks
+
+# repos:
+# - repo: https://github.com/fabasoad/pre-commit-snyk
+#   rev: v1.0.2
+#   hooks:
+#     - id: snyk-code
+#       args:
+#       - '--snyk-args=--severity-threshold=high'
+#       # entry: bash -c 'snyk code test --severity-threshold=high || true'
+#     - id: snyk-test
+#       args:
+#       - '--snyk-args=--severity-threshold=high'
+#       - '--skip-unresolved=true'
+      # entry: bash -c 'snyk test --severity-threshold=high || true'
+# - repo: https://github.com/pre-commit/pre-commit-hooks
+#   rev: v4.3.0
+#   hooks:
+#   - id: check-merge-conflict
+# - repo: https://github.com/bridgecrewio/checkov.git
+#   rev: '3.2.394'
+#   hooks:
+#   - id: checkov
+#     name: Checkov
+#     description: This hook runs checkov.
+#     entry: checkov -d .
+#     verbose: true
+#     args: 
+#       - '--framework=terraform'
+#       - '--soft-fail'
+#       - '--quiet'
+#       - '--skip-check=CKV_TF_1,CKV_AWS_18'
+#     language: python
+#     pass_filenames: false
+#     always_run: false
+#     files: \.tf$
+#     exclude: \.+.terraform\/.*$
+#     require_serial: true

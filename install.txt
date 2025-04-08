@@ -1,0 +1,4 @@
+Mac OS
+bash 4.0 - brew install bash
+pre-commit
+snyk ?
